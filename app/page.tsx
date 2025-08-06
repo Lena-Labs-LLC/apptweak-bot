@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, Key, BarChart3, Plus, Trash2 } from 'lucide-react'
+import { DatePicker } from '@/components/ui/date-picker'
+import { AlertCircle, Key, BarChart3, Plus, Trash2, Calendar, TrendingUp } from 'lucide-react'
 
 interface Country {
   code: string
@@ -22,6 +23,9 @@ interface AppMetricsData {
   metrics: string[]
   country: string
   device: string
+  startDate?: Date
+  endDate?: Date
+  isHistorical: boolean
 }
 
 export default function Home() {
@@ -30,7 +34,8 @@ export default function Home() {
     appIds: [''],
     metrics: [],
     country: 'us',
-    device: 'iphone'
+    device: 'iphone',
+    isHistorical: false
   })
   const [countries, setCountries] = useState<Country[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -147,10 +152,29 @@ export default function Home() {
       return
     }
 
+    // Check if historical data is requested
+    if (appMetrics.isHistorical) {
+      if (!appMetrics.startDate || !appMetrics.endDate) {
+        alert('Please select both start and end dates for historical data')
+        return
+      }
+    }
+
     setIsLoading(true)
     
     try {
-      const url = `/api/apptweak/metrics?apps=${validAppIds.join(',')}&metrics=${appMetrics.metrics.join(',')}&country=${appMetrics.country}&device=${appMetrics.device}`
+      let url: string
+      
+      if (appMetrics.isHistorical && appMetrics.startDate && appMetrics.endDate) {
+        // Format dates as YYYY-MM-DD
+        const startDate = appMetrics.startDate.toISOString().split('T')[0]
+        const endDate = appMetrics.endDate.toISOString().split('T')[0]
+        
+        url = `/api/apptweak/metrics/history?apps=${validAppIds.join(',')}&metrics=${appMetrics.metrics.join(',')}&country=${appMetrics.country}&device=${appMetrics.device}&start_date=${startDate}&end_date=${endDate}`
+      } else {
+        // Current metrics
+        url = `/api/apptweak/metrics?apps=${validAppIds.join(',')}&metrics=${appMetrics.metrics.join(',')}&country=${appMetrics.country}&device=${appMetrics.device}`
+      }
       
       const response = await fetch(url, {
         method: 'GET',
@@ -315,6 +339,73 @@ export default function Home() {
                   </div>
                 </div>
 
+                {/* Data Type Selection */}
+                <div className="space-y-3">
+                  <Label>Data Type</Label>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="current-data"
+                        checked={!appMetrics.isHistorical}
+                        onCheckedChange={() => setAppMetrics({...appMetrics, isHistorical: false})}
+                      />
+                      <Label htmlFor="current-data" className="text-sm flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4" />
+                        Current Data
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="historical-data"
+                        checked={appMetrics.isHistorical}
+                        onCheckedChange={() => setAppMetrics({...appMetrics, isHistorical: true})}
+                      />
+                      <Label htmlFor="historical-data" className="text-sm flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4" />
+                        Historical Data
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Date Range Selection (only for historical data) */}
+                {appMetrics.isHistorical && (
+                  <div className="space-y-3">
+                    <Label>Date Range</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm text-muted-foreground">Start Date</Label>
+                        <DatePicker
+                          date={appMetrics.startDate}
+                          onDateChange={(date) => setAppMetrics({...appMetrics, startDate: date})}
+                          placeholder="Select start date"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm text-muted-foreground">End Date</Label>
+                        <DatePicker
+                          date={appMetrics.endDate}
+                          onDateChange={(date) => setAppMetrics({...appMetrics, endDate: date})}
+                          placeholder="Select end date"
+                        />
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+                        <div className="text-sm text-blue-800 dark:text-blue-200">
+                          <div className="font-medium mb-1">Historical Data Pricing</div>
+                          <div className="space-y-1 text-xs">
+                            <div>• Downloads/Revenues: 500 credits/app for 1st day + 50/day extra</div>
+                            <div>• Ratings/Daily Ratings/App Power: 10 credits/app for 1st day + 1/day extra</div>
+                            <div>• Shorter date ranges cost fewer credits</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Country and Device */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -371,33 +462,95 @@ export default function Home() {
                         {Object.entries(results.result).map(([appId, appData]: [string, any]) => (
                           <Card key={appId}>
                             <CardHeader>
-                              <CardTitle className="text-lg">App ID: {appId}</CardTitle>
+                              <CardTitle className="text-lg flex items-center gap-2">
+                                App ID: {appId}
+                                {appMetrics.isHistorical && (
+                                  <Badge variant="secondary" className="ml-2">
+                                    <Calendar className="h-3 w-3 mr-1" />
+                                    Historical
+                                  </Badge>
+                                )}
+                              </CardTitle>
                             </CardHeader>
                             <CardContent>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {Object.entries(appData).map(([metric, data]: [string, any]) => (
-                                  <div key={metric} className="bg-muted p-3 rounded-lg">
-                                    <div className="font-medium capitalize mb-1">
-                                      {metric.replace('-', ' ')}
-                                    </div>
-                                    <div className="text-2xl font-bold">
-                                      {metric === 'revenues' ? `$${data.value?.toLocaleString()}` : 
-                                       metric === 'ratings' ? data.value?.toFixed(2) : 
-                                       data.value?.toLocaleString()}
-                                    </div>
-                                    {data.date && (
-                                      <div className="text-sm text-muted-foreground">
-                                        {data.date}
+                              {appMetrics.isHistorical ? (
+                                // Historical data visualization
+                                <div className="space-y-4">
+                                  {Object.entries(appData).map(([metric, dataPoints]: [string, any]) => (
+                                    <div key={metric} className="space-y-3">
+                                      <div className="font-medium capitalize text-lg">
+                                        {metric.replace('-', ' ')}
                                       </div>
-                                    )}
-                                    {data.currency && (
-                                      <div className="text-sm text-muted-foreground">
-                                        {data.currency}
+                                      <div className="grid gap-3">
+                                        {Array.isArray(dataPoints) ? dataPoints.map((point: any, index: number) => (
+                                          <div key={index} className="bg-muted p-3 rounded-lg">
+                                            <div className="flex justify-between items-center">
+                                              <div className="text-sm text-muted-foreground">
+                                                {point.date}
+                                              </div>
+                                              <div className="text-lg font-bold">
+                                                {metric === 'revenues' ? `$${point.value?.toLocaleString()}` : 
+                                                 metric === 'ratings' ? point.value?.toFixed(2) : 
+                                                 point.value?.toLocaleString()}
+                                              </div>
+                                            </div>
+                                            {point.currency && (
+                                              <div className="text-xs text-muted-foreground mt-1">
+                                                {point.currency}
+                                              </div>
+                                            )}
+                                            {point.breakdown && (
+                                              <div className="mt-2 text-xs text-muted-foreground">
+                                                <details>
+                                                  <summary className="cursor-pointer">Rating Breakdown</summary>
+                                                  <div className="mt-1 space-y-1">
+                                                    <div>⭐ 5 stars: {point.breakdown[5]?.toLocaleString()}</div>
+                                                    <div>⭐ 4 stars: {point.breakdown[4]?.toLocaleString()}</div>
+                                                    <div>⭐ 3 stars: {point.breakdown[3]?.toLocaleString()}</div>
+                                                    <div>⭐ 2 stars: {point.breakdown[2]?.toLocaleString()}</div>
+                                                    <div>⭐ 1 star: {point.breakdown[1]?.toLocaleString()}</div>
+                                                    <div className="pt-1 border-t">Total: {point.breakdown.total?.toLocaleString()}</div>
+                                                  </div>
+                                                </details>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )) : (
+                                          <div className="bg-muted p-3 rounded-lg">
+                                            <div className="text-sm text-muted-foreground">No data available</div>
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                // Current data visualization (existing)
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                  {Object.entries(appData).map(([metric, data]: [string, any]) => (
+                                    <div key={metric} className="bg-muted p-3 rounded-lg">
+                                      <div className="font-medium capitalize mb-1">
+                                        {metric.replace('-', ' ')}
+                                      </div>
+                                      <div className="text-2xl font-bold">
+                                        {metric === 'revenues' ? `$${data.value?.toLocaleString()}` : 
+                                         metric === 'ratings' ? data.value?.toFixed(2) : 
+                                         data.value?.toLocaleString()}
+                                      </div>
+                                      {data.date && (
+                                        <div className="text-sm text-muted-foreground">
+                                          {data.date}
+                                        </div>
+                                      )}
+                                      {data.currency && (
+                                        <div className="text-sm text-muted-foreground">
+                                          {data.currency}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </CardContent>
                           </Card>
                         ))}
