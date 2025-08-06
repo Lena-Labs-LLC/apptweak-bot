@@ -1,0 +1,8 @@
+---
+alwaysApply: true
+---
+When a message sent through chat, you will extract the task(s) from the message.
+
+Then you will record the task(s) with a title and summarized description in the @PRD.md file with a "[ ]" next to it.
+
+Then, after completion of the task, you will check the box like [x].
