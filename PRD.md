@@ -39,3 +39,8 @@
   - Initialize git repository and set up proper .gitignore
   - Remove node_modules and large files to avoid GitHub size limits
   - Successfully push to https://github.com/Lena-Labs-LLC/apptweak-bot.git
+
+- [x] Fix Vercel deployment error
+  - Remove deprecated `experimental.appDir` option from next.config.js
+  - Fix TypeScript errors in selective-download route
+  - Ensure build passes locally and on Vercel
