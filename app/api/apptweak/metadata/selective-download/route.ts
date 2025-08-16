@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
                   if (Array.isArray(appData.screenshots)) {
                     console.log(`Found ${appData.screenshots.length} screenshots (simple array format)`)
                     // Simple array format - array of URLs or objects
-                    appData.screenshots.forEach((screenshot, index) => {
+                    appData.screenshots.forEach((screenshot: any, index: number) => {
                       const screenshotIndex = index + 1
                       const screenshotUrl = typeof screenshot === 'string' ? screenshot : screenshot.url
                       
