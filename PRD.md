@@ -15,6 +15,26 @@
   - Enhanced visualization for time-series data with proper formatting
   - Credit cost information and error handling for insufficient credits
 
+- [x] Add App Metadata feature
+  - Fetch comprehensive app metadata including titles, descriptions, screenshots, icons, and more
+  - Support for up to 10 app IDs per request
+  - Country, device, and language selection for localized metadata
+  - Preview metadata in beautiful card layout with app icons and key information
+  - Download metadata as structured JSON files with export information
+  - Pricing: 10 credits per app for all metadata elements
+
+- [x] Add Selective Metadata Export
+  - Checkboxes for specific metadata elements (icon, screenshots, title, subtitle, description)
+  - Organized folder structure: each element type gets its own folder
+  - Download as ZIP archive with proper file organization
+  - App-specific folders with clean naming (e.g., "App_Name/title/title.txt")
+  - Support for both iOS and Android screenshot formats
+  - Automatic image downloading and proper file extensions
+  - Metadata summary JSON for each app
+  - ✅ **FULLY WORKING**: Screenshots download correctly from existing metadata
+  - Uses cached metadata to avoid API credit consumption
+  - Handles complex screenshot object structures with URL extraction
+
 - [x] Push the app to GitHub repository
   - Initialize git repository and set up proper .gitignore
   - Remove node_modules and large files to avoid GitHub size limits
